@@ -1,0 +1,29 @@
+image: alxestevam/node-16-app-center-cli-2-11-0-expo-cli-6.0.5:1.0.0
+
+definitions:
+  services:
+    docker:
+      memory: 2048
+
+pipelines:
+  branches:
+    develop:
+      - parallel:
+        - step:
+            name: Publish OTA
+            script:
+              - COMMIT_MESSAGE=`git log --format=%B -n 1 $BITBUCKET_COMMIT`
+              - STR="[BUILD]"
+              - bash -c "if [[ ! \"$COMMIT_MESSAGE\" == *\"$STR\"* ]]; then yarn && yes Y | expo publish; fi"
+        - step:
+            name: Build iOS
+            script:
+              - COMMIT_MESSAGE=`git log --format=%B -n 1 $BITBUCKET_COMMIT`
+              - STR="[BUILD]"
+              - bash -c "if [[ \"$COMMIT_MESSAGE\" == *\"$STR\"* ]]; then appcenter build queue --branch develop --app $APP_CENTER_APP_ID_IOS --token \"$APP_CENTER_TOKEN_IOS\"; fi"
+        - step:
+            name: Build Android
+            script:
+              - COMMIT_MESSAGE=`git log --format=%B -n 1 $BITBUCKET_COMMIT`
+              - STR="[BUILD]"
+              - bash -c "if [[ \"$COMMIT_MESSAGE\" == *\"$STR\"* ]]; then appcenter build queue --branch develop --app $APP_CENTER_APP_ID_ANDROID --token \"$APP_CENTER_TOKEN_ANDROID\"; fi"
